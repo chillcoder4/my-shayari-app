@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Live Gemini Shayari</title>
+<style>
+body { font-family:sans-serif; background:#0f172a; color:white; display:flex; flex-direction:column; align-items:center; padding:40px; }
+textarea { width:90%; max-width:700px; height:120px; margin-bottom:10px; padding:15px; border-radius:10px; border:none; background:rgba(255,255,255,0.1); color:white; }
+button { padding:10px 20px; margin:5px; border:none; border-radius:25px; background:linear-gradient(90deg,#00bcd4,#2196f3); color:white; cursor:pointer; }
+.card { background: rgba(255,255,255,0.05); border-radius:20px; padding:20px; max-width:700px; width:90%; margin-top:20px; display:none; }
+.shayari { padding:10px; margin-bottom:10px; border-radius:10px; background:rgba(255,255,255,0.08); }
+img { width:100%; border-radius:12px; margin-top:10px; }
+</style>
+</head>
+<body>
+
+<h1>💫 Live Gemini Shayari 💫</h1>
+<textarea id="shayariInput" placeholder="Apni Shayari yahan likho..."></textarea>
+<button onclick="generateShayari()">✨ Generate</button>
+
+<div class="card" id="outputCard">
+  <div class="shayari" id="english"></div>
+  <div class="shayari" id="hindi"></div>
+  <div class="shayari" id="hinglish"></div>
+  <img id="shayariImage" alt="shayari image">
+  <div style="margin-top:10px;">
+    <button onclick="copyAll()">📋 Copy All</button>
+    <button onclick="shareAll()">📤 Share</button>
+  </div>
+</div>
+
+<script>
+async function generateShayari(){
+  const text = document.getElementById("shayariInput").value.trim();
+  if(!text) return alert("Please enter your Shayari");
+
+  const card = document.getElementById("outputCard");
+  card.style.display = "block";
+  document.getElementById("english").innerText = "Loading...";
+  document.getElementById("hindi").innerText = "";
+  document.getElementById("hinglish").innerText = "";
+  document.getElementById("shayariImage").src = "";
+
+  try {
+    const res = await fetch("/.netlify/functions/generate", {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({ shayari:text })
+    });
+    const data = await res.json();
+    const sections = data.text.split(/\n\d+\./).filter(Boolean);
+
+    document.getElementById("english").innerHTML = "<b>English:</b><br>"+(sections[0]||"");
+    document.getElementById("hindi").innerHTML = "<b>Hindi:</b><br>"+(sections[1]||"");
+    document.getElementById("hinglish").innerHTML = "<b>Hinglish:</b><br>"+(sections[2]||"");
+    document.getElementById("shayariImage").src = data.image;
+
+  } catch(err){
+    document.getElementById("english").innerText = "Error: "+err.message;
+  }
+}
+
+function copyAll(){
+  const text = document.getElementById("english").innerText + "\n\n" +
+               document.getElementById("hindi").innerText + "\n\n" +
+               document.getElementById("hinglish").innerText;
+  navigator.clipboard.writeText(text);
+  alert("Copied to clipboard 📋");
+}
+
+function shareAll(){
+  const text = document.getElementById("english").innerText + "\n\n" +
+               document.getElementById("hindi").innerText + "\n\n" +
+               document.getElementById("hinglish").innerText;
+  if(navigator.share){
+    navigator.share({ title:"My Shayari 💫", text });
+  } else {
+    alert("Sharing not supported. Copied instead.");
+    navigator.clipboard.writeText(text);
+  }
+}
+</script>
+
+</body>
+</html>
